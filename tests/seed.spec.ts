@@ -4,6 +4,7 @@ import { test, expect } from '@playwright/test';
 
 test('seed', async ({ page, baseURL }) => {
   test.skip(!baseURL, 'No URL: set BASE_URL, a **URL:** line in the plan, or defaultUrl in agentic.config.json');
-  const res = await page.goto('/');
+  // '' keeps the baseURL path ('/' would resolve to the host root).
+  const res = await page.goto('');
   expect(res?.ok(), `Could not open ${baseURL}`).toBeTruthy();
 });

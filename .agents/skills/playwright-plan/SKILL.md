@@ -37,7 +37,7 @@ Key rules (full details in `prompts/agent.md`):
 - Write only inside the plan's output folder: `<name>.spec.ts` + `pages/*.ts`.
 - One `test()` per scenario, titled with the scenario number; tag every test `@<name>`.
 - Locators in page objects only: getByRole / getByLabel / getByPlaceholder / getByTestId.
-- Use relative `page.goto('/')`. Never hard-code the URL (playwright.config.ts sets it per plan).
+- Use `page.goto('')` (not `'/'`, which drops the URL's path). Never hard-code the URL (playwright.config.ts sets it per plan).
 - No `waitForTimeout`, no `test.only`.
 
 ## 5. Verify each plan

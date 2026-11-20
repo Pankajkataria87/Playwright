@@ -5,7 +5,9 @@ You will be given a plan file: `plans/<name>.md`.
 
 ## Inputs
 - **URL**: from the plan's `**URL:**` line (or BASE_URL env). Never hard-code it in tests;
-  use relative `page.goto('/...')`. playwright.config.ts sets baseURL per plan.
+  use `page.goto('')` for the plan URL itself and relative paths without a leading slash
+  (`page.goto('settings')`) for sub-pages. A leading `/` drops the URL's path
+  (e.g. `https://x.com/app` + `/` → `https://x.com/`). playwright.config.ts sets baseURL per plan.
 - **Seed**: `tests/seed.spec.ts`. Run it first:
   `BASE_URL=<url> npx playwright test --project=seed`. If it fails, stop and report why.
 
