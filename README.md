@@ -61,6 +61,23 @@ Priority: `BASE_URL` env var  >  `**URL:**` in the plan  >  `defaultUrl` in `age
 BASE_URL=https://staging.myapp.com npm run plan plans/login.md   # same plan, other environment
 ```
 
+## Reports, screenshots and traces
+`npm run report` opens the HTML report from the last run (also: `test-results/results.xml` JUnit, `test-results/results.json`).
+What it contains depends on `use` in `playwright.config.ts`:
+
+| Setting (default) | When you get it |
+|-------------------|-----------------|
+| `screenshot: 'only-on-failure'` | A screenshot is attached **only to failed tests**. A fully green run has none. |
+| `trace: 'on-first-retry'` | A trace (step-by-step screenshots + DOM snapshots) is recorded **only when a failed test is retried**. Retries are 2 in CI (`CI=true`) and 0 locally, so local runs record no traces. |
+
+To get screenshots/traces for passing tests too:
+```bash
+npx playwright test --project=login --trace=on   # one run: full trace for every test
+npm run report                                   # open a test → "Traces" to step through it
+```
+Or make it permanent by setting `use: { trace: 'on', screenshot: 'on' }` in `playwright.config.ts`
+(bigger, slower reports). Tests run headless by default; add `--headed` to watch the browser, or `--ui` for UI mode.
+
 ## What gets generated
 ```
 tests/generated/login/
