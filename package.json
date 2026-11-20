@@ -1,0 +1,18 @@
+{
+  "name": "agentic-playwright",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "plan": "node scripts/run-plan.mjs",
+    "test": "playwright test",
+    "report": "playwright show-report",
+    "list": "playwright test --list",
+    "agents:init": "playwright init-agents --loop=claude"
+  },
+  "devDependencies": {
+    "@playwright/test": "latest",
+    "@types/node": "latest",
+    "typescript": "latest"
+  }
+}

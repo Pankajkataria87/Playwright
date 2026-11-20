@@ -1,0 +1,6 @@
+{
+  "defaultUrl": "",
+  "browser": "chromium",
+  "plansDir": "plans",
+  "outputDir": "tests/generated"
+}
