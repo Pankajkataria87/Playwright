@@ -37,6 +37,24 @@ npm run agents:init      # optional: Playwright generator/healer for Claude Code
    npm run report
    ```
 
+## Multiple plans
+Add more `.md` files to `plans/`, flat or grouped in folders (e.g. one folder per JIRA story).
+Each plan can have its own URL. Files/folders starting with `_` are ignored (drafts, templates).
+```
+plans/
+├── login.md                 → project "login"
+└── QA-42/
+    ├── billing-tab.md       → project "qa-42-billing-tab"
+    └── security-tab.md      → project "qa-42-security-tab"
+```
+```bash
+npm run plan plans/login.md plans/QA-42/billing-tab.md   # pick plans
+npm run plan plans/QA-42/                                # a whole folder
+npm run plan -- --all                                    # everything
+npm run plan plans/QA-42/ -- --print                     # one combined prompt for Devin
+npx playwright test --project=qa-42-billing-tab          # run one plan's tests
+```
+
 ## Configuring the URL
 Priority: `BASE_URL` env var  >  `**URL:**` in the plan  >  `defaultUrl` in `agentic.config.json`.
 ```bash
