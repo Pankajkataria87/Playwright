@@ -68,3 +68,14 @@ tests/generated/login/
 └── pages/LoginPage.ts
 ```
 Delete a plan's folder to regenerate from scratch.
+
+## Running in Devin (Skills)
+The repo includes a Devin skill at `.agents/skills/playwright-plan/SKILL.md`.
+Once the repo is connected in Devin, start a session and type:
+```
+@skills:playwright-plan plans/todomvc.md
+@skills:playwright-plan plans/QA-42/
+@skills:playwright-plan --all
+```
+Devin sets up the machine, generates tests per `prompts/agent.md`, runs them, opens a PR
+and replies with a results table. Edit the SKILL.md and push to change how it works.
