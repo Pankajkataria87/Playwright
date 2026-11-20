@@ -1,6 +1,6 @@
 ---
 name: playwright-plan
-description: Turn Markdown test plans (plans/*.md with URL, steps and expected results) into Playwright tests, run them, fix flaky locators and report results. Use when asked to automate, generate or run tests for a plan file or plans folder.
+description: Turn Markdown test plans (plans/*.md with URL, steps and expected results) into Playwright tests, run them, run the security checks, then open one PR with functional results and security findings. Use when asked to automate, generate or run tests for a plan file or plans folder.
 ---
 
 # Generate and run Playwright tests from Markdown plans
@@ -37,7 +37,7 @@ Key rules (full details in `prompts/agent.md`):
 - Write only inside the plan's output folder: `<name>.spec.ts` + `pages/*.ts`.
 - One `test()` per scenario, titled with the scenario number; tag every test `@<name>`.
 - Locators in page objects only: getByRole / getByLabel / getByPlaceholder / getByTestId.
-- Use `page.goto('')` (not `'/'`, which drops the URL's path). Never hard-code the URL (playwright.config.ts sets it per plan).
+- Use relative `page.goto('/')`. Never hard-code the URL (playwright.config.ts sets it per plan).
 - No `waitForTimeout`, no `test.only`.
 
 ## 5. Verify each plan
@@ -48,12 +48,30 @@ npx playwright test --project=<name> --repeat-each=3
 - If the app really behaves differently from the plan, mark that test `test.fixme()` with a one-line reason.
 - `npx tsc --noEmit -p .` must pass.
 
-## 6. Finish
-1. Final run of all processed plans:
-   `npx playwright test --project=<name1> --project=<name2> ...`
-2. Open one PR titled `Automated tests: <plan names>`.
-   Commit only `tests/generated/**` (and `plans/**` if you were asked to add a plan).
-3. Reply with one table per plan:
+## 6. Security checks (before any PR)
+Read `.agents/skills/playwright-security/SKILL.md` and follow its sections **0 to 4** for the
+same plans (authorisation gate, ground rules, setup, write checks, run).
+**Skip its section 5**: there is one PR for everything, created in step 7 below.
+- If a plan's host is not in `securityAllowedHosts`, skip security for that plan only,
+  and say so in the final reply. Do not add hosts to the list yourself.
+- Security findings are expected results, not test bugs: never weaken those assertions.
 
+## 7. Finish
+1. Final run of all processed plans (functional + security):
+   `npx playwright test --project=<name1> --project=<name2> ...`
+2. Decide the PR type:
+   - Any **[HIGH]** security finding → open the PR as a **draft** and start its description with
+     `⚠️ HIGH security findings – review before merging`.
+   - Otherwise → open a normal PR.
+3. One PR titled `Automated tests: <plan names>`.
+   Commit only `tests/generated/**` (and `plans/**` if you were asked to add a plan).
+   Put both tables below in the PR description.
+4. Reply with, per plan:
+
+**Functional results**
 | # | Scenario | Result (pass / fail / fixme) | Notes |
 |---|----------|------------------------------|-------|
+
+**Security findings** (sorted HIGH → INFO; or "skipped: host not authorised")
+| Severity | Check | Result (pass / FINDING / n/a) | Evidence | Suggested fix |
+|----------|-------|-------------------------------|----------|---------------|
