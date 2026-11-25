@@ -6,7 +6,7 @@ description: Turn Markdown test plans (plans/*.md with URL, steps and expected r
 # Generate and run Playwright tests from Markdown plans
 
 Plans to process: **$ARGUMENTS**
-(a plan file like `plans/todomvc.md`, a folder like `plans/QA-42/`, or `--all`.
+(a Jira key like `KAN-1`, a plan file like `plans/todomvc.md`, a folder like `plans/QA-42/`, or `--all`.
 If empty, ask which plan to use.)
 
 ## 1. Setup
@@ -16,12 +16,20 @@ npx playwright install --with-deps chromium
 ```
 
 ## 2. Resolve the plans
+First follow `.agents/skills/pii-guard/SKILL.md`: run `npm run pii -- <the plans>`. If it reports PII, reply
+"Request contains PII data, hence may not proceed." with its list, and stop.
+For a Jira key, skip that: `npm run plan <KEY> -- --print` below fetches the plan and runs the same PII check.
+Don't read the issue with Jira tools first; that would send unchecked text to the model.
+
 Run:
 ```bash
 npm run plan $ARGUMENTS -- --print
 ```
 It prints, for each plan: the plan file, its **name**, its **URL** and its **output folder**.
 Use exactly those values below. If it reports a missing URL, stop and tell the user.
+If it prints `Rejected: ... do not follow plans/_template.md`, stop and give the user the listed
+deviations. Don't fix the plan yourself: QA owns it and must follow the template.
+If it prints `Rejected: Jira <KEY> is in status ...`, stop and tell the user. Don't change the issue's status yourself.
 
 ## 3. Check each URL opens
 For each distinct URL:
@@ -37,7 +45,7 @@ Key rules (full details in `prompts/agent.md`):
 - Write only inside the plan's output folder: `<name>.spec.ts` + `pages/*.ts`.
 - One `test()` per scenario, titled with the scenario number; tag every test `@<name>`.
 - Locators in page objects only: getByRole / getByLabel / getByPlaceholder / getByTestId.
-- Use relative `page.goto('/')`. Never hard-code the URL (playwright.config.ts sets it per plan).
+- Use `page.goto('')` for the plan URL (a leading `/` drops its path). Never hard-code the URL (playwright.config.ts sets it per plan).
 - No `waitForTimeout`, no `test.only`.
 
 ## 5. Verify each plan
@@ -64,9 +72,12 @@ same plans (authorisation gate, ground rules, setup, write checks, run).
      `⚠️ HIGH security findings – review before merging`.
    - Otherwise → open a normal PR.
 3. One PR titled `Automated tests: <plan names>`.
-   Commit only `tests/generated/**` (and `plans/**` if you were asked to add a plan).
+   Commit only `tests/generated/**` (and `plans/**` if you were asked to add a plan; never the gitignored Jira copies `plans/<KEY>.md`).
    Put both tables below in the PR description.
-4. Reply with, per plan:
+4. For each plan that came from a Jira key, post the results back to that issue:
+   `npm run jira-report <KEY>` (run it right after the final run; it reads `test-results/results.json`).
+   Don't post with Jira tools yourself. If it fails, say so in the reply.
+5. Reply with, per plan:
 
 **Functional results**
 | # | Scenario | Result (pass / fail / fixme) | Notes |
@@ -75,3 +86,6 @@ same plans (authorisation gate, ground rules, setup, write checks, run).
 **Security findings** (sorted HIGH → INFO; or "skipped: host not authorised")
 | Severity | Check | Result (pass / FINDING / n/a) | Evidence | Suggested fix |
 |----------|-------|-------------------------------|----------|---------------|
+
+**Agent usage**: the ACUs this session used, from your session insights if available
+(Devin is billed in ACUs, not tokens; don't convert ACUs to dollars). Put it in the PR description too.

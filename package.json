@@ -4,9 +4,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "plan": "node scripts/run-plan.mjs",
+    "plan": "python3 scripts/run_plan.py",
     "test": "playwright test",
     "report": "playwright show-report",
+    "usage": "python3 scripts/usage.py",
+    "validate": "python3 scripts/validate_plan.py",
+    "pii": "python3 scripts/pii.py",
+    "jira": "python3 scripts/jira_plan.py",
+    "jira-report": "python3 scripts/jira_report.py",
     "list": "playwright test --list",
     "agents:init": "playwright init-agents --loop=claude"
   },

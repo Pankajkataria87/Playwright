@@ -3,3 +3,7 @@ node_modules/
 test-results/
 playwright-report/
 blob-report/
+reports/
+__pycache__/
+# local copies of plans fetched from Jira (npm run plan KAN-1); Jira is the source
+plans/[A-Z]*-[0-9]*.md

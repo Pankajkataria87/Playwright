@@ -2,5 +2,10 @@
   "defaultUrl": "",
   "browser": "chromium",
   "plansDir": "plans",
-  "outputDir": "tests/generated"
+  "outputDir": "tests/generated",
+  "jiraBaseUrl": "https://pankajiae.atlassian.net",
+  "jiraRequiredStatus": "Ready for Automation",
+  "securityAllowedHosts": [
+    "demo.playwright.dev"
+  ]
 }

@@ -1,0 +1,25 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && python3 scripts/hooks/pii_guard.py" }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && python3 scripts/hooks/pii_guard.py" }
+        ]
+      },
+      {
+        "matcher": "Read|Write|Edit|MultiEdit|Bash",
+        "hooks": [
+          { "type": "command", "command": "cd \"$CLAUDE_PROJECT_DIR\" && python3 scripts/hooks/pre_tool_use.py" }
+        ]
+      }
+    ]
+  }
+}
