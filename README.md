@@ -53,6 +53,10 @@ Only issues in status **Ready for Automation** are run (`"jiraRequiredStatus"` i
 Any other status rejects the whole run before the plan is saved, so nothing is generated, run or posted, and an old `plans/KAN-1.md` copy is deleted:
 `Rejected: Jira KAN-1 is in status "To Do"; only issues in "Ready for Automation" can be automated.`
 
+When `npm run plan KAN-1` rejects a run, it also comments the reason on KAN-1: wrong status, no plan code block,
+template deviations (with plan line numbers) or PII (masked values only, e.g. `***1111`).
+`-- --no-jira-report` skips this comment too.
+
 After the final run, `npm run plan KAN-1` posts the results back to KAN-1, pass or fail:
 - **Comment:** verdict, counts, duration, URL, and one row per scenario (pass / FAIL / flaky / skipped, first error line for failures).
 - **Attachments:** the zipped HTML report (open `index.html` after unzipping), plus any screenshots and videos

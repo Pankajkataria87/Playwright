@@ -29,6 +29,10 @@ class JiraError(Exception):
     pass
 
 
+class JiraRejected(JiraError):
+    """The issue was read, but its plan may not be automated (status, no plan code block)."""
+
+
 def is_key(arg: str) -> bool:
     return bool(KEY_RE.match(arg))
 
@@ -88,7 +92,7 @@ def required_status() -> str:
 def check_status(key: str, fields: dict) -> None:
     want, status = required_status(), ((fields.get('status') or {}).get('name') or '')
     if want and status.casefold() != want.casefold():
-        raise JiraError(f'Rejected: Jira {key} is in status "{status}"; only issues in "{want}" can be automated.\n'
+        raise JiraRejected(f'Rejected: Jira {key} is in status "{status}"; only issues in "{want}" can be automated.\n'
                         f'Move {key} to "{want}" in Jira, then run again.')
 
 
@@ -103,7 +107,7 @@ def text_of(node: dict) -> str:
 def plan_from(key: str, description: dict | None) -> str:
     blocks = [b for b in (description or {}).get('content') or [] if b.get('type') == 'codeBlock']
     if not blocks:
-        raise JiraError(f'Jira {key}: the description has no code block. '
+        raise JiraRejected(f'Rejected: Jira {key}: the description has no code block. '
                         'Paste the plan (plans/_template.md format) into a code block in the description.')
     text = re.sub(r'^```\w*\n|\n```\s*$', '', text_of(blocks[0]).strip())
     return text.rstrip() + '\n'

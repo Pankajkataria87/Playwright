@@ -23,6 +23,7 @@ from datetime import datetime, timezone
 
 sys.dont_write_bytecode = True
 from jira_plan import JiraError, is_key, jira_api, site  # noqa: E402
+from plans import config  # noqa: E402
 
 RESULTS = 'test-results/results.json'
 HTML_REPORT = 'playwright-report'
@@ -193,6 +194,23 @@ def post_report(key: str, project: str, url: str = '') -> str:
                    {'Content-Type': 'application/json'})
     link = f"{site()}/browse/{key}?focusedCommentId={res.get('id', '')}" if isinstance(res, dict) else key
     return f'Jira {key}: results comment + {len(attached)} attachment(s) posted → {link}'
+
+
+def post_rejection(key: str, message: str) -> str:
+    """Comment on `key` why `npm run plan` rejected it (status, template, PII; PII values are already masked)."""
+    lines = [ln.replace(f"{config['plansDir']}/{key}.md:", 'plan line ') for ln in message.strip().splitlines()]
+    body = {'type': 'doc', 'version': 1, 'content': [
+        {'type': 'heading', 'attrs': {'level': 3}, 'content': [text('Automation rejected: tests were not generated or run')]},
+        para(text(lines[0])),
+        *([{'type': 'codeBlock', 'content': [text('\n'.join(lines[1:]))]}] if len(lines) > 1 else []),
+        para(text('Run: ', True), text(datetime.now(timezone.utc).isoformat(timespec='seconds')),
+             text('   Host: ', True), text(socket.gethostname())),
+        para(text('Posted automatically by agentic-playwright (scripts/jira_report.py).')),
+    ]}
+    res = jira_api(key, 'POST', f'/issue/{key}/comment', json.dumps({'body': body}).encode(),
+                   {'Content-Type': 'application/json'})
+    link = f"{site()}/browse/{key}?focusedCommentId={res.get('id', '')}" if isinstance(res, dict) else key
+    return f'Jira {key}: rejection posted → {link}'
 
 
 if __name__ == '__main__':

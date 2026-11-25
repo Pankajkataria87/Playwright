@@ -25,8 +25,8 @@ from datetime import datetime, timezone
 sys.dont_write_bytecode = True
 sys.stdout.reconfigure(line_buffering=True)
 
-from jira_plan import JiraError, fetch_plan, is_key  # noqa: E402
-from jira_report import post_report  # noqa: E402
+from jira_plan import JiraError, JiraRejected, fetch_plan, is_key  # noqa: E402
+from jira_report import post_rejection, post_report  # noqa: E402
 from pii import find_pii, pii_message  # noqa: E402
 from plans import all_plans, config, read, resolve_plans, slug, url_for  # noqa: E402
 from usage import USAGE_LOG, append_usage, print_usage, tokens_from  # noqa: E402
@@ -42,10 +42,27 @@ args = sys.argv[1:]
 PRINT = '--print' in args
 RUN_ONLY = '--run-only' in args
 JIRA_REPORT = '--no-jira-report' not in args
-try:
-    jira_plans = {a: fetch_plan(a) for a in args if is_key(a)}
-except JiraError as e:
-    fail(str(e))
+
+
+def reject(msg: str, per_key: dict[str, str] | None = None) -> None:
+    """Stop the run; for plans from Jira, also comment the reason on each rejected issue."""
+    print(msg, file=sys.stderr)
+    for key, why in (per_key or {}).items() if JIRA_REPORT else ():
+        try:
+            print(post_rejection(key, why), file=sys.stderr)
+        except JiraError as e:
+            print(f'Jira rejection not posted: {e}', file=sys.stderr)
+    sys.exit(1)
+
+
+jira_plans: dict[str, str] = {}
+for a in [a for a in args if is_key(a)]:
+    try:
+        jira_plans[a] = fetch_plan(a)
+    except JiraRejected as e:
+        reject(str(e), {a: str(e)})
+    except JiraError as e:
+        fail(str(e))
 fetched = list(jira_plans.values())
 plans = all_plans() if '--all' in args else resolve_plans(
     [a for a in args if not a.startswith('--') and not is_key(a)] + fetched)
@@ -56,12 +73,14 @@ if not plans:
 # Reject the whole execution if any plan deviates from plans/_template.md, before any agent time.
 deviations = [e for p in plans for e in validate_plan(p)]
 if deviations:
-    fail(rejection(deviations))
+    reject(rejection(deviations),
+           {k: rejection(errs) for k, p in jira_plans.items() if (errs := validate_plan(p))})
 
-# Never send a plan containing PII to an agent (pii-guard skill).
+# Never send a plan containing PII to an agent (pii-guard skill). Values are masked, also in Jira comments.
 pii = [{**h, 'where': p} for p in plans for h in find_pii(read(p))]
 if pii:
-    fail(pii_message(pii))
+    reject(pii_message(pii),
+           {k: pii_message(hits) for k, p in jira_plans.items() if (hits := [h for h in pii if h['where'] == p])})
 
 jobs = [{'plan': p, 'name': slug(p), 'url': url_for(p), 'out': f"{config['outputDir']}/{slug(p)}"} for p in plans]
 missing = [j['plan'] for j in jobs if not j['url']]

@@ -30,6 +30,7 @@ Use exactly those values below. If it reports a missing URL, stop and tell the u
 If it prints `Rejected: ... do not follow plans/_template.md`, stop and give the user the listed
 deviations. Don't fix the plan yourself: QA owns it and must follow the template.
 If it prints `Rejected: Jira <KEY> is in status ...`, stop and tell the user. Don't change the issue's status yourself.
+For a Jira key, any rejection is already commented on the issue by that command; don't post it again.
 
 ## 3. Check each URL opens
 For each distinct URL:
