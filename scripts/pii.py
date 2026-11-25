@@ -54,9 +54,15 @@ def verhoeff(s: str) -> bool:
     return c == 0
 
 
+def _card_groups(m: str) -> bool:
+    """Card layouts only: no separators, 4-4-4-4(-3), or Amex 4-6-5, not e.g. a 20261125-092637 timestamp."""
+    g = [len(x) for x in re.split(r'[ -]', m)]
+    return len(g) == 1 or g in ([4, 6, 5], [4, 6, 4]) or (len(g) >= 4 and set(g[:-1]) == {4} and g[-1] <= 4)
+
+
 def _card(m: str) -> bool:
     d = digits(m)
-    return d[:1] in '3456' and d != '' and luhn(d) and d not in TEST_CARDS
+    return d != '' and _card_groups(m) and luhn(d) and d not in TEST_CARDS  # any issuer prefix
 
 
 # Order matters: earlier detectors claim their text first, so one value is reported once.

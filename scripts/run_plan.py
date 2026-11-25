@@ -97,6 +97,16 @@ def prompt_for(j: dict) -> str:
             'Use the Playwright generator agent to write the tests and the healer agent to fix failures, if available.')
 
 
+# Scan exactly what the agent is given: each prompt and the instructions it points to.
+AGENT_MD = 'prompts/agent.md'
+shared = [{**h, 'where': AGENT_MD} for h in find_pii(read(AGENT_MD))] if os.path.exists(AGENT_MD) else []
+prompt_pii = {j['plan']: [{**h, 'where': f"prompt for {j['plan']}"} for h in find_pii(prompt_for(j))] + shared
+              for j in jobs}
+if any(prompt_pii.values()):
+    reject(pii_message([h for hs in prompt_pii.values() for h in hs]),
+           {k: pii_message(prompt_pii[p]) for k, p in jira_plans.items() if prompt_pii.get(p)})
+
+
 projects = [f"--project={j['name']}" for j in jobs]
 
 # --print: one prompt covering all plans, ready to paste into Devin / any agent.

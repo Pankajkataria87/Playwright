@@ -53,6 +53,9 @@ Only issues in status **Ready for Automation** are run (`"jiraRequiredStatus"` i
 Any other status rejects the whole run before the plan is saved, so nothing is generated, run or posted, and an old `plans/KAN-1.md` copy is deleted:
 `Rejected: Jira KAN-1 is in status "To Do"; only issues in "Ready for Automation" can be automated.`
 
+The PII check covers the whole issue (summary, full description, comments) before the plan is saved,
+then each plan, then the exact prompt and `prompts/agent.md` before anything goes to the agent.
+
 When `npm run plan KAN-1` rejects a run, it also comments the reason on KAN-1: wrong status, no plan code block,
 template deviations (with plan line numbers) or PII (masked values only, e.g. `***1111`).
 `-- --no-jira-report` skips this comment too.
@@ -66,7 +69,7 @@ Add `-- --no-jira-report` to skip posting. A Jira error while posting is printed
 
 Setup: the site is `jiraBaseUrl` in `agentic.config.json`. Put your credentials in `.env.local` (gitignored):
 ```
-JIRA_EMAIL=you@company.com
+JIRA_EMAIL=you@example.com
 JIRA_API_TOKEN=<token from https://id.atlassian.com/manage-profile/security/api-tokens>
 ```
 

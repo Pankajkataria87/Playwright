@@ -19,6 +19,7 @@ import urllib.error
 import urllib.request
 
 sys.dont_write_bytecode = True
+from pii import find_pii, pii_message  # noqa: E402
 from plans import config  # noqa: E402
 
 KEY_RE = re.compile(r'^[A-Z][A-Z0-9]+-\d+$')
@@ -30,7 +31,7 @@ class JiraError(Exception):
 
 
 class JiraRejected(JiraError):
-    """The issue was read, but its plan may not be automated (status, no plan code block)."""
+    """The issue was read, but its plan may not be automated (status, PII, no plan code block)."""
 
 
 def is_key(arg: str) -> bool:
@@ -81,7 +82,17 @@ def jira_api(key: str, method: str, path: str, data: bytes | None = None, header
 
 
 def fetch_issue(key: str) -> dict:
-    return jira_api(key, 'GET', f'/issue/{key}?fields=summary,description,updated,status')
+    return jira_api(key, 'GET', f'/issue/{key}?fields=summary,description,updated,status,comment')
+
+
+def check_pii(key: str, fields: dict) -> None:
+    """Reject if any issue text has PII: summary, the whole description (not only the plan) and comments."""
+    parts = {'summary': fields.get('summary') or '', 'description': lines_of(fields.get('description') or {})}
+    for c in (fields.get('comment') or {}).get('comments') or []:
+        parts[f"comment {c.get('id')}"] = lines_of(c.get('body') or {})
+    hits = [{**h, 'where': f'Jira {key} {part}'} for part, t in parts.items() for h in find_pii(t)]
+    if hits:
+        raise JiraRejected('Rejected: ' + pii_message(hits))
 
 
 def required_status() -> str:
@@ -104,6 +115,18 @@ def text_of(node: dict) -> str:
     return ''.join(text_of(c) for c in node.get('content') or [])
 
 
+INLINE = {'text', 'hardBreak', 'mention', 'emoji', 'inlineCard', 'date', 'status'}
+
+
+def lines_of(node: dict) -> str:
+    """Like text_of, but each block (paragraph, cell, list item...) on its own line, so separate
+    values such as "12" and "2.1" in adjacent table cells don't merge into one long number."""
+    if node.get('type') in INLINE:
+        return text_of(node)
+    inner = ''.join(lines_of(c) for c in node.get('content') or [])
+    return inner if node.get('type') == 'doc' else inner.rstrip('\n') + '\n'
+
+
 def plan_from(key: str, description: dict | None) -> str:
     blocks = [b for b in (description or {}).get('content') or [] if b.get('type') == 'codeBlock']
     if not blocks:
@@ -120,6 +143,7 @@ def fetch_plan(key: str) -> str:
     path = os.path.join(config['plansDir'], f'{key}.md')
     try:
         check_status(key, fields)
+        check_pii(key, fields)
     except JiraError:
         if os.path.exists(path):
             os.remove(path)  # stale copy would keep the project runnable via plain `npx playwright test`
